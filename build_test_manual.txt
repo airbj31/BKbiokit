@@ -1,0 +1,15 @@
+## make document
+
+devtools::document() or  Ctrl/Cmd + Shift + D in Rstudio
+
+## build
+
+devtools::build()
+
+## install
+
+devtools::install()
+
+##  Install Package:           'Cmd + Shift + B'
+#   Check Package:             'Cmd + Shift + E'
+#   Test Package:              'Cmd + Shift + T'
