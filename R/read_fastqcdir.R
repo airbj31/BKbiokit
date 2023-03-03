@@ -10,7 +10,6 @@
 #' @export
 read_fastqcdir <- function(DIR)
 {
-  DIR<-DIR
   vc<-list.files(DIR)
   vc<-vc[grep("_fastqc.zip",vc)]
   full_report<-list()

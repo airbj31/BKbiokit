@@ -12,7 +12,6 @@
 #' @examples
 #' read_fastqc("demo_fastqc.zip")
 #' @export
-#'
 
 read_fastqc<-function(fastqc="K34_1_fastqc.zip")
 {

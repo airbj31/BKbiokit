@@ -32,11 +32,6 @@
   ```
 
 <!--
-### plink/gwas
-
-plink output files were handled by followings[^1].
-
-#### FILE I/O
 
 
 - read_plink_ped()      - read plink version 1 file.
@@ -44,16 +39,6 @@ plink output files were handled by followings[^1].
 - read_plink_miss()     - read `--miss` output of plink 
 - read_plink_pca()      - 
 - read_plink_mds()      -
-
-
-
-
-
-
-### Visualization
-
-
-
 
 ## TODO
 - [trimmomatic](./trim.R) call system command to do adapter clipping/low quality removal.
