@@ -14,36 +14,45 @@
 * for usage information, plz see `??<command>`
 * entiries without link are planning.
 
-
-
-### NGS
-
-#### FILE I/O
+### FILE I/O
 
 - [read_fastqc](./R/read_fastqc.R) is a function to load fastqc report file (.zip file) into R environment.
 - [read_fastqcdir](./R/read_fastqcdir.R) is a funciton to read all fastqc report files (.zip files) and aggregate them into one object.
+- [read_gff](./R/read_gff.R) is .parser of gff file into R list. attribute columns automatically divided into columns. so the make it easy to understand.
+- [read_phylip_dist](./R/read_phylip_dist.R)` reads phylip produced distance matrix file into R environment.
 
+### Getting urls from accession numbers
+
+- [bioLinkGen](./R/bioLinkGen.R)
+
+  ```r 
+  ## bioLinkGen Usage
+  broweURL(bioLinkGen("SRR17041298"))     ## open SRR17041298 run
+  bioLinkGen("SRR17041298",format="html") ## make link for SRR17041298
+  ```
+
+<!--
 ### plink/gwas
 
 plink output files were handled by followings[^1].
 
 #### FILE I/O
 
+
 - read_plink_ped()      - read plink version 1 file.
 - read_plink_genome()   - read `--genome` output of plink
 - read_plink_miss()     - read `--miss` output of plink 
 - read_plink_pca()      - 
 - read_plink_mds()      -
+-->
 
-#### phylogenetics
 
-- [read_phylip_dist](./R/read_phylip_dist.R)` reads phylip produced distance matrix file into R environment.
+
 
 
 ### Visualization
 
-| **[read_gff](./R/read_gff.R)**
-|           is parser of gff file into R list. attribute columns divided into columns.
+
 
 
 ## TODO
