@@ -44,7 +44,7 @@ plink output files were handled by followings[^1].
 - read_plink_miss()     - read `--miss` output of plink 
 - read_plink_pca()      - 
 - read_plink_mds()      -
--->
+
 
 
 
@@ -71,3 +71,4 @@ https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR11888826/SRR
 
 [^1] [plink v1.9](https://www.cog-genomics.org/plink2/)
 
+-->

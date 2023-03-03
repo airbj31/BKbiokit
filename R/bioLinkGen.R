@@ -56,19 +56,3 @@ bioLinkGen <- function(x,format="text",target="_blank",class="auto",desc=FALSE) 
 
   if(format=="html") {return(x)}
 }
-
-
-
-
-#html_bioPrjLnkGen <- function(x) {
-#  return(sprintf('<a href="https://www.ncbi.nlm.nih.gov/bioproject/%s" target="_blank">%s</a>',x,x))
-#}
-
-#html_bioSmpLnkGen <- function(x) {
-#  x<-gsub("SAMN","",x)
-#  return(sprintf('<a href="https://www.ncbi.nlm.nih.gov/biosample//%s" target="_blank">%s</a>',x,x))
-#}
-
-#html_RunLnkGen <- function(x) {
-#  return(sprintf('<a href="https://trace.ncbi.nlm.nih.gov/Traces/?view=run_browser&acc=%s" target="_blank">%s</a>',x,x))
-#}
