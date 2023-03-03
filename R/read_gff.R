@@ -6,12 +6,8 @@
 #' @return data frame which contained cleanned
 #' @import tidyverse
 #' @import stringr
-#'
-#'
+#' @export
 
-
-## x<-"../../Research/bee-genome/refseq/genome_assemblies_genome_gff/ncbi-genomes-2022-03-14/GCF_003254395.2_Amel_HAv3.1_genomic.gff.gz"
-##x <-"../../Research/bee-genome/refseq/
 read_gff <- function(x,comment="#") {
   message("reading ",x)
   gff <- read_tsv(x,comment=comment,col_names=c("seqid","source","type","start","end","score","strand","phase","attributes"),col_types=cols())
