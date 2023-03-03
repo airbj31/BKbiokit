@@ -17,6 +17,9 @@ bioLinkGen <- function(x,format="text",target="_blank",class="auto",desc=FALSE) 
   ## References
   ## genbank: [ ] https://www.ncbi.nlm.nih.gov/genbank/acc_prefix/
   ## Refseq : [x] https://www.ncbi.nlm.nih.gov/books/NBK21091/table/ch18.T.refseq_accession_numbers_and_mole/?report=objectonly/
+
+  if(is.na(x)) {return(x)}
+
   if(class=="auto") {
     class <- case_when(substr(x,1,3)=="SRR"                              ~ "Run",          ## SRA Run
                     substr(x,1,3)=="SRX"                                 ~ "Experiment",   ## SRA Experiment
