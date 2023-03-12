@@ -3,13 +3,16 @@
 #' this function generates links (bioproject, run, experiment, sample information for) for a given strings.
 #'
 #' @param x a vector file.
-#' @param format text or html a tag.
-#' @param when format is "html", 4 target link action works. (_self, _blank, _parent, or _top). please see https://www.w3schools.com/tags/att_a_target.asp
+#' @param format text or html link tag (<a href="blah blah>x</a>).
+#' @param target when format is "html", 4 target link action works. (_self, _blank, _parent, or _top). please see https://www.w3schools.com/tags/att_a_target.asp. if the format is text, the target option is not used.
 #' @param desc TRUE or FALSE. describe the accession.
-#' @import tidyverse
-#' @return list object which contains summary and reports for denoted qc reports.
+#' @return the function vector object which contains text or html link which redirect the accessions.
+#' @keywords ${1:URL generator}
+#' @import dplyr
 #' @examples
+#' get links
 #' bioLinkGen("SRR17041298")
+#' bioLinkGen("PRJNA216922")
 #' browseURL(bioLinkGen("SRR17041298"))
 #' @export
 
@@ -43,20 +46,25 @@ bioLinkGen <- function(x,format="text",target="_blank",class="auto",desc=FALSE) 
                     grepl("^[a-zA-Z]{4}[0-9]{8+}",x,perl=TRUE)               ~ "genbank_WGS",     ## genbank WGS
                     grepl("^[a-zA-Z]{6}[0-9]{9+}",x,perl=TRUE)               ~ "genbank_WGS",     ## genbank WGS
                     grepl("^[a-zA-Z]{5}[0-9]{7}",x,perl=TRUE)                ~ "genbank_MGA",     ## genbank MGA
-                    grepl("^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$",x,perl=TRUE) ~ "UniprotKB"       ## uniprot
+                    grepl("^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$",x,perl=TRUE) ~ "uniprotkb",       ## uniprot
+                    grepl("^10.[0-9]{4,}/[a-zA-Z.]",x,perl=TRUE)             ~ "doi"              ## doi
                   )
   }
   ## error handling
 
-   stopifnot(class %in% c("Run","Experiment","BioProject","biosample","assembly","RefSeq","None","genbak","genbank_protein","genbank_WGS","genbank_MGA"))
+   stopifnot(class %in% c("Run","Experiment","BioProject","biosample","assembly","RefSeq","None","genbak","genbank_protein","genbank_WGS","genbank_MGA","uniprotkb","doi"))
    html <- case_when(
-     class == "None"       ~ as.character(NA),
-     class == "Run"        ~ paste0('https://trace.ncbi.nlm.nih.gov/Traces/?view=run_browser&acc=',x),
-     class == "Experiment" ~ paste0('https://www.ncbi.nlm.nih.gov/sra/',x),
-     class == "BioProject" ~ paste0('https://www.ncbi.nlm.nih.gov/bioproject/',x),
-     class == "biosample"  ~ paste0('https://www.ncbi.nlm.nih.gov/biosample/',x),
-     class == "assembly"   ~ paste0('https://www.ncbi.nlm.nih.gov/assembly/',x),
-     class == "RefSeq"     ~ paste0('https://www.ncbi.nlm.nih.gov/refseq/',x)
+     class == "None"                       ~ as.character(NA),
+     class == "Run"                        ~ paste0('https://trace.ncbi.nlm.nih.gov/Traces/?view=run_browser&acc=',x),
+     class == "Experiment"                 ~ paste0('https://www.ncbi.nlm.nih.gov/sra/',x),
+     class == "BioProject"                 ~ paste0('https://www.ncbi.nlm.nih.gov/bioproject/',x),
+     class == "biosample"                  ~ paste0('https://www.ncbi.nlm.nih.gov/biosample/',x),
+     class == "assembly"                   ~ paste0('https://www.ncbi.nlm.nih.gov/assembly/',x),
+     class == "RefSeq"                     ~ paste0('https://www.ncbi.nlm.nih.gov/refseq/',x),
+     class == "uniprot"                    ~ paste0('https://www.uniprot.org/uniprotkb/',x),
+     class %in% c("genbank","genbank_WGS") ~ paste0('https://www.ncbi.nlm.nih.gov/nuccore/',x),
+     class == "genbank_protein"            ~ paste0('https://www.ncbi.nlm.nih.gov/nuccore/',x),
+     class == "doi"                        ~ paste0('https://www.doi.org/',x)
    )
   if(format=="text") {return(html)}
 
@@ -67,7 +75,8 @@ bioLinkGen <- function(x,format="text",target="_blank",class="auto",desc=FALSE) 
       class == "BioProject" ~ paste0('<a href="',html,'" target="',target,'">',x,'</a>'),
       class == "biosample"  ~ paste0('<a href="',html,'" target="',target,'">',x,'</a>'),
       class == "assembly"   ~ paste0('<a href="',html,'" target="',target,'">',x,'</a>'),
-      class == "RefSeq"     ~ paste0('<a href="',html,'" target="',target,'">',x,'</a>')
+      class == "RefSeq"     ~ paste0('<a href="',html,'" target="',target,'">',x,'</a>'),
+      class == "doi"        ~ paste0('<a href="',html,'" target="',target,'">',x,'</a>')
     )
 
   if(format=="html") {return(x)}

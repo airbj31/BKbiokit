@@ -9,14 +9,14 @@ bioLinkGen(x, format = "text", target = "_blank", class = "auto", desc = FALSE)
 \arguments{
 \item{x}{a vector file.}
 
-\item{format}{text or html a tag.}
+\item{format}{text or html link tag (<a href="blah blah>x\if{html}{\out{</a>}}).}
+
+\item{target}{when format is "html", 4 target link action works. (_self, _blank, _parent, or _top). please see https://www.w3schools.com/tags/att_a_target.asp. if the format is text, the target option is not used.}
 
 \item{desc}{TRUE or FALSE. describe the accession.}
-
-\item{when}{format is "html", 4 target link action works. (_self, _blank, _parent, or _top). please see https://www.w3schools.com/tags/att_a_target.asp}
 }
 \value{
-list object which contains summary and reports for denoted qc reports.
+vector object which contains text or html link which redirect the accessions.
 }
 \description{
 this function generates links (bioproject, run, experiment, sample information for) for a given strings.
@@ -25,3 +25,5 @@ this function generates links (bioproject, run, experiment, sample information f
 bioLinkGen("SRR17041298")
 browseURL(bioLinkGen("SRR17041298"))
 }
+\keyword{${1:URL}
+\keyword{generator}}
