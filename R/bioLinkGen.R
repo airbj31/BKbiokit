@@ -7,7 +7,6 @@
 #' @param target when format is "html", 4 target link action works. (_self, _blank, _parent, or _top). please see https://www.w3schools.com/tags/att_a_target.asp. if the format is text, the target option is not used.
 #' @param desc TRUE or FALSE. describe the accession.
 #' @return the function vector object which contains text or html link which redirect the accessions.
-#' @keywords ${1:URL generator}
 #' @import dplyr
 #' @examples
 #' get links

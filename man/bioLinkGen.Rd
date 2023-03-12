@@ -16,14 +16,14 @@ bioLinkGen(x, format = "text", target = "_blank", class = "auto", desc = FALSE)
 \item{desc}{TRUE or FALSE. describe the accession.}
 }
 \value{
-vector object which contains text or html link which redirect the accessions.
+the function vector object which contains text or html link which redirect the accessions.
 }
 \description{
 this function generates links (bioproject, run, experiment, sample information for) for a given strings.
 }
 \examples{
+get links
 bioLinkGen("SRR17041298")
+bioLinkGen("PRJNA216922")
 browseURL(bioLinkGen("SRR17041298"))
 }
-\keyword{${1:URL}
-\keyword{generator}}
