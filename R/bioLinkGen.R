@@ -26,7 +26,7 @@ bioLinkGen <- function(x,format="text",target="_blank",class="auto",desc=FALSE) 
   if(class=="auto") {
     class <- case_when(
                     is.na(x)                                                 ~ "None",
-                    substr(x,1,3)=="SRR"                                     ~ "Run",             ## SRA Run
+                    substr(x,1,3) %in% c("SRR","ERR")                        ~ "Run",             ## SRA Run
                     substr(x,1,3)=="SRX"                                     ~ "Experiment",      ## SRA Experiment
                     substr(x,1,3)=="PRJ"                                     ~ "BioProject",      ## SRA Bioproject
                     substr(x,1,4)=="SAMN"                                    ~ "biosample",       ## Biosample

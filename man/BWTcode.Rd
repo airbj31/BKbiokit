@@ -4,12 +4,14 @@
 \alias{BWTcode}
 \title{BWTcode}
 \usage{
-BWTcode(str = "ACACT", rc = TRUE)
+BWTcode(str = "ACACT", rc = TRUE, lexi_one = TRUE)
 }
 \arguments{
 \item{str}{a string or vector.}
 
 \item{rc}{if you want to count repetitive motifs from the}
+
+\item{lexi_one}{print first entry of lexicographical sorting. if FALSE, it prints every entry.}
 }
 \value{
 downloaded file
@@ -22,5 +24,7 @@ the development aim
 please use vBWTcode
 }
 \examples{
-download_SRA("SRR17041298")
+BWTcode("TCACA")
+BWTcode("TCACA",rc=TRUE)
+BWTcode("TCACA",rc=TRUE,lexi_one=FALSE)
 }

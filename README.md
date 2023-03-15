@@ -23,13 +23,27 @@
 
 ### DATA manipulation.
 
-- [BWTcode and vBWTcode](./R/BWT.R) are function inspired by Burrow-Wheeler Transform and one-hot encoding. The function is developed to analyze short tandem repeats with K-mer approach. The main purpose of the program is merging repeat elements into one K-mer. e.g. `TTAGG`, `GTTAG`, `GGTTA`, `AGGTT`, `TAGGT` are merged into `AGGTT`.**plz note that the function choose 1st entry from sorting out all the possible k-mers lexicographical order.** When Reverse Complement options is on, we also consider the reverse complement using Biostrings::reverseComplement function. `vBWTcode` is vectorized function to use function in tidyverse way.
+- [BWTcode and vBWTcode](./R/BWT.R) are function inspired by Burrow-Wheeler Transform and one-hot encoding. The function is developed to analyze short tandem repeats with K-mer approach. The main purpose of the program is merging repeat elements into one K-mer. e.g. `TTAGG`, `GTTAG`, `GGTTA`, `AGGTT`, `TAGGT` are merged into `AGGTT`.**plz note that the function choose 1st entry from sorting out all the possible k-mers lexicographical order.** When Reverse Complement options is on, we also consider the reverse complement using Biostrings::reverseComplement function. `vBWTcode` is vectorized function to use function in tidyverse way.  
+  ```r
+  BWTcode("TTAGGG",rc=FALSE)
+  BWTcode("TTAGGG",rc=TRUE)
 
-```r
-BWTcode("TTAGGG",rc=FALSE)
-BWTcode("TTAGGG",rc=TRUE)
+  ```
+### NCBI E-utility
 
-```
+NCBI E-utility APIs are implementing into `BKbiokit` for easy NCBI search.
+
+- [einfo()](./R/einfo.R).  
+  ```r
+  einfo()            ## get db information
+  einfo(db="pubmed") ## get information about pubmed db.
+  einfo(db="nuccore) ## get information about nuccore (nucelotide) db.
+  ```
+- [esearch()](./R/einfo.R)
+  ```r
+  esearch("apis cerana")
+  
+  ```
 
 
 ### Getting urls from accession numbers

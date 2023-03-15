@@ -6,13 +6,16 @@
 #' please use vBWTcode
 #' @param str a string or vector.
 #' @param rc if you want to count repetitive motifs from the
+#' @param lexi_one print first entry of lexicographical sorting. if FALSE, it prints every entry.
 #' @return downloaded file
 #' @import dplyr
 #' @examples
-#' download_SRA("SRR17041298")
+#' BWTcode("TCACA")
+#' BWTcode("TCACA",rc=TRUE)
+#' BWTcode("TCACA",rc=TRUE,lexi_one=FALSE)
 #' @export
 #'
-BWTcode <-function(str="ACACT",rc=TRUE) {
+BWTcode <-function(str="ACACT",rc=TRUE,lexi_one=TRUE) {
 
   #  str<-paste0("^",str,"|")
   FINALVC<-str
@@ -33,7 +36,9 @@ BWTcode <-function(str="ACACT",rc=TRUE) {
   }
 
   }
-  return(sort(FINALVC)[1])
+  if(isTRUE(lexi_one)) {return(sort(FINALVC)[1])}
+  else {return(sort(FINALVC))}
+
 }
 
 vBWTcode<-Vectorize(BWTcode,vectorize.args="str")
