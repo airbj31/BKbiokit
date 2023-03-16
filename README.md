@@ -29,20 +29,26 @@
   BWTcode("TTAGGG",rc=TRUE)
 
   ```
-### NCBI E-utility
+### NCBI E-utility and/or Related things
 
 NCBI E-utility APIs are implementing into `BKbiokit` for easy NCBI search.
 
 - [einfo()](./R/einfo.R).  
   ```r
   einfo()            ## get db information
-  einfo(db="pubmed") ## get information about pubmed db.
-  einfo(db="nuccore) ## get information about nuccore (nucelotide) db.
+  einfo(db="pubmed") ## get information about pubmed db and field/link information.
+  einfo(db="nuccore) ## get information about nuccore (nucelotide) db and field/link information
   ```
 - [esearch()](./R/einfo.R)
   ```r
   esearch("apis cerana")
   
+  ```
+
+- [download_SRA()](./R/download_SRA.R) this function downloads SRA file and decrypt it using fasterq-dump. sratookit and aws client are required to use this function.
+  ```r
+  download_SRA("SRR17041298")
+
   ```
 
 

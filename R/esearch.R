@@ -13,6 +13,7 @@
 #' @return vector of IDs.
 #' @import tidyverse
 #' @import xml2
+#' @import stringi
 #' @export
 #' @details
 #' available DBs :
@@ -41,15 +42,15 @@ esearch <- function(query,
 
 
   ## query manipulation
-  query <- query |> gsub(' ','+') |> gsub('#','%23') |> gsub('"','%22')
+  query<-stringi::stri_replace_all_regex(query,pattern=c(" ","#",'"'),replacement=c("+","$23","%22"),vectorize=FALSE)
 
   ## db
-  if(!db %in% c("bioproject","biosample","books","cdd","gap",
-                "dbvar","gene","genome","gds","geoprofiles",
-                "homologene","mesh","toolkit","nlmcatalog","nuccore",
-                "popset","probe","protein","proteinclusters","pcassay",
-                "pccompound","pcsubstance","pubmed","pmc","snp",
-                "sra","structure","taxonomy")) {stop("db isn't involved in the allowed list. please see the manual of the function.")}
+#  if(!db %in% c("bioproject","biosample","books","cdd","gap",
+#                "dbvar","gene","genome","gds","geoprofiles",
+#                "homologene","mesh","toolkit","nlmcatalog","nuccore",
+#                "popset","probe","protein","proteinclusters","pcassay",
+#                "pccompound","pcsubstance","pubmed","pmc","snp",
+#                "sra","structure","taxonomy")) {stop("db isn't involved in the allowed list. please see the manual of the function.")}
   URL <- "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
   URL <- paste0(URL,"db=",db)
   if(query != "") {URL <- paste0(URL,"&term=",query)}
@@ -60,12 +61,12 @@ esearch <- function(query,
   if(rettype != "") {URL <- paste0(URL,"&rettype=",rettype)}
 
   search_result<-xml2::read_xml(URL)
-  total<-search_result |> xml2::xml_find_all(xpath = ".//Count") |> xml_text(trim=TRUE) |> as.numeric()
-  findings <- search_result %>% xml2::xml_find_all(xpath = ".//IdList/Id") |> xml2::xml_text(trim=TRUE) |> as.numeric()
-  translated_query <- search_result %>% xml2::xml_find_all(xpath = ".//QueryTranslation") |> xml2::xml_text(trim=TRUE)
+  total<-search_result |> xml2::xml_find_all(xpath = "//Count") |> xml2::xml_text(trim=TRUE) |> as.numeric()
+  findings <- search_result %>% xml2::xml_find_all(xpath = "//IdList/Id") |> xml2::xml_text(trim=TRUE) |> as.numeric()
+  translated_query <- search_result %>% xml2::xml_find_all(xpath = "//QueryTranslation") |> xml2::xml_text(trim=TRUE)
 
-  message(paste0(length(findings)," among ", total, " entries were found."))
-  message(paste0("the query is translated into ",translated_query))
-  message("The followings are PMIDs")
+  message(paste0(length(findings)," / ", total, " entries were found."))
+  message(paste0("the query is translated into \n\t",translated_query))
+  #message("The followings are PMIDs: ")
   return(findings)
 }
