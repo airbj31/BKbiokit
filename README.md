@@ -18,7 +18,7 @@
 
 - [read_fastqc](./R/read_fastqc.R) is a function to load fastqc report file (.zip file) into R environment.
 - [read_fastqcdir](./R/read_fastqcdir.R) is a function to read all fastqc report files (.zip files) and aggregate them into one object.
-- [read_gff](./R/read_gff.R) is .parser of gff file into R list. attribute columns automatically divided into columns. so the make it easy to understand.
+- [read_gff](./R/read_gff.R) is a gff parser which convert gff file into R list. attribute columns automatically divided into columns. so the function make the file easy to understand. ths lists were named as `Type` columns.
 - [read_phylip_dist](./R/read_phylip_dist.R)` reads phylip produced distance matrix file into R environment.
 
 ### DATA manipulation.

@@ -1,16 +1,16 @@
 #' esearch
 #'
-#' search NCBI query NCBU using NCBI eutility API.
+#' search NCBI db using esearch API. retun
 #'
 #' @param query NCBI string query. for more information please read
 #' @param db NCBI DBs described in details
-#' @param api_key NCBI api_key. you can get your own api_key from NCBI setting page after log-in.
+#' @param api_key NCBI api_key. you can get your own api_key from NCBI setting page after log-in. To use the function easily, you need to declare "NCBI_API_KEY" in .Renviron file.
 #' @param usehistory T/F. save result in your search history. you can also get WebEnv information. (default=T)
 #' @param retstart number of skipping from the search  (Default=0)
 #' @param retmax total number of unique identifiers from the retrived set to be shown in the output (default=20)
-#' @param rettype (optional) "uilist" or "count" (default="uilist")
+#' @param rettype (optional) "uilist" or "count" (default="uilist"). if the value is count, the function only redirects the total number of query results.
 #' @param datetype (optional) one from c("crdt","edat","pdat","mhda")
-#' @return vector of IDs.
+#' @return list or vector object.
 #' @import tidyverse
 #' @import xml2
 #' @import stringi
@@ -32,7 +32,7 @@
 
 esearch <- function(query,
                     db="pubmed",
-                    api_key="",
+                    api_key=Sys.getenv('NCBI_API_KEY'),
                     usehistory=TRUE,
                     retmax=20,
                     retstart=0,
@@ -45,28 +45,38 @@ esearch <- function(query,
   query<-stringi::stri_replace_all_regex(query,pattern=c(" ","#",'"'),replacement=c("+","$23","%22"),vectorize=FALSE)
 
   ## db
-#  if(!db %in% c("bioproject","biosample","books","cdd","gap",
-#                "dbvar","gene","genome","gds","geoprofiles",
-#                "homologene","mesh","toolkit","nlmcatalog","nuccore",
-#                "popset","probe","protein","proteinclusters","pcassay",
-#                "pccompound","pcsubstance","pubmed","pmc","snp",
-#                "sra","structure","taxonomy")) {stop("db isn't involved in the allowed list. please see the manual of the function.")}
+  if(!db %in% BKbiokit::einfo()) {stop("db isn't involved in the allowed list. Please see einfo() for available db information")}
   URL <- "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
   URL <- paste0(URL,"db=",db)
   if(query != "") {URL <- paste0(URL,"&term=",query)}
-  if(api_key != "") {URL <- paste0(URL,"&api_key=",api_key)}
+  if(api_key != "") {
+    URL <- paste0(URL,"&api_key=",api_key)
+  }
   if(isTRUE(usehistory)) {URL <-paste0(URL,"&usehistory=y")}
   if(retmax != "") {URL <- paste0(URL,"&retmax=",retmax)}
-  if(retstart != "") {URL <- paste0(URL,"&retstart=",api_key)}
+  if(retstart != "") {URL <- paste0(URL,"&retstart=",retstart)}
   if(rettype != "") {URL <- paste0(URL,"&rettype=",rettype)}
 
   search_result<-xml2::read_xml(URL)
   total<-search_result |> xml2::xml_find_all(xpath = "//Count") |> xml2::xml_text(trim=TRUE) |> as.numeric()
-  findings <- search_result %>% xml2::xml_find_all(xpath = "//IdList/Id") |> xml2::xml_text(trim=TRUE) |> as.numeric()
-  translated_query <- search_result %>% xml2::xml_find_all(xpath = "//QueryTranslation") |> xml2::xml_text(trim=TRUE)
+  if(rettype == "count") {
+    message(total, " entries were found."))
+    return(total)
+  } else (rettype != "count") {
+  IDs <- search_result |> xml2::xml_find_all(xpath = "//IdList/Id") |> xml2::xml_text(trim=TRUE) |> as.numeric()
+  translated_query <- search_result |> xml2::xml_find_all(xpath = "//QueryTranslation") |> xml2::xml_text(trim=TRUE)
+  webEnv <- search_result |> xml2::xml_find_all(xpath = "//WebEnv") |> xml2::xml_text(trim=TRUE)
 
-  message(paste0(length(findings)," / ", total, " entries were found."))
+
+  message(paste0(IDs(IDs)," / ", total, " entries were found."))
   message(paste0("the query is translated into \n\t",translated_query))
-  #message("The followings are PMIDs: ")
+  message("The followings are list object containing total number of redirected query result, IDs, and WebEnv")
+
+    findings<-list(
+      total=total,
+      IDs=IDs,
+      WebEnv=WebEnv,
+  )
   return(findings)
+  }
 }
