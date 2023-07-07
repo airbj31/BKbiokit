@@ -7,7 +7,7 @@
 esearch(
   query,
   db = "pubmed",
-  api_key = "",
+  api_key = Sys.getenv("NCBI_API_KEY"),
   usehistory = TRUE,
   retmax = 20,
   retstart = 0,
@@ -19,7 +19,7 @@ esearch(
 
 \item{db}{NCBI DBs described in details}
 
-\item{api_key}{NCBI api_key. you can get your own api_key from NCBI setting page after log-in.}
+\item{api_key}{NCBI api_key. you can get your own api_key from NCBI setting page after log-in. To use the function easily, you need to declare "NCBI_API_KEY" in .Renviron file.}
 
 \item{usehistory}{T/F. save result in your search history. you can also get WebEnv information. (default=T)}
 
@@ -27,15 +27,15 @@ esearch(
 
 \item{retstart}{number of skipping from the search  (Default=0)}
 
-\item{rettype}{(optional) "uilist" or "count" (default="uilist")}
+\item{rettype}{(optional) "uilist" or "count" (default="uilist"). if the value is count, the function only redirects the total number of query results.}
 
 \item{datetype}{(optional) one from c("crdt","edat","pdat","mhda")}
 }
 \value{
-vector of IDs.
+list or vector object.
 }
 \description{
-search NCBI query NCBU using NCBI eutility API.
+search NCBI db using esearch API. retun
 }
 \details{
 available DBs :
