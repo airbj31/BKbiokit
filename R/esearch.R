@@ -67,7 +67,7 @@ esearch <- function(query,
   translated_query <- search_result |> xml2::xml_find_all(xpath = "//QueryTranslation") |> xml2::xml_text(trim=TRUE)
   webEnv <- search_result |> xml2::xml_find_all(xpath = "//WebEnv") |> xml2::xml_text(trim=TRUE)
 
-  message(paste0(IDs(IDs)," / ", total, " entries were found."))
+  message(paste0(length(IDs)," / ", total, " entries were found."))
   message(paste0("the query is translated into \n\t",translated_query))
   message("The followings are list object containing total number of redirected query result, IDs, and WebEnv")
 
