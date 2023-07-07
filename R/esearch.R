@@ -60,13 +60,12 @@ esearch <- function(query,
   search_result<-xml2::read_xml(URL)
   total<-search_result |> xml2::xml_find_all(xpath = "//Count") |> xml2::xml_text(trim=TRUE) |> as.numeric()
   if(rettype == "count") {
-    message(total, " entries were found."))
+    message(paste0(total, " entries were found."))
     return(total)
-  } else (rettype != "count") {
+  } else if(rettype != "count") {
   IDs <- search_result |> xml2::xml_find_all(xpath = "//IdList/Id") |> xml2::xml_text(trim=TRUE) |> as.numeric()
   translated_query <- search_result |> xml2::xml_find_all(xpath = "//QueryTranslation") |> xml2::xml_text(trim=TRUE)
   webEnv <- search_result |> xml2::xml_find_all(xpath = "//WebEnv") |> xml2::xml_text(trim=TRUE)
-
 
   message(paste0(IDs(IDs)," / ", total, " entries were found."))
   message(paste0("the query is translated into \n\t",translated_query))
