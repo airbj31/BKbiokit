@@ -3,6 +3,7 @@
 export(BWTcode)
 export(bioLinkGen)
 export(download_SRA)
+export(efetch)
 export(einfo)
 export(esearch)
 export(read_fastqc)
