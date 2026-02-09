@@ -1,0 +1,50 @@
+#' get GO_IDs from full 
+#' @param go_id 문자열(Character). (예: "GO:0002376").
+#' @param fl vector of following elements.  
+#'   \itemize{
+#'     \item \strong{[유전자 정보]}
+#'     \item \code{bioentity}: 유전자/단백질 고유 식별자 (MGI ID, UniProt ID 등)
+#'     \item \code{bioentity_label}: 유전자 심볼 (예: Pax6, Tp53)
+#'     \item \code{bioentity_name}: 유전자 정식 명칭
+#'     \item \code{type}: 엔티티 타입 (gene, protein, complex 등)
+#'     \item \code{synonym}: 유전자 별칭/동의어
+#'     \item \strong{[GO 용어 정보]}
+#'     \item \code{annotation_class}: GO ID (예: GO:0002376)
+#'     \item \code{annotation_class_label}: GO 용어 명칭 (예: immune system process)
+#'     \item \code{aspect}: GO 범주 (P: Biological Process, F: Molecular Function, C: Cellular Component)
+#'     \item \strong{[증거 및 출처]}
+#'     \item \code{evidence_type}: 증거 코드 (IDA, IEA, IMP 등)
+#'     \item \code{evidence_subset_closure_label}: 증거 그룹 (experimental evidence 등)
+#'     \item \code{assigned_by}: 주석 작성 기관 (MGI, UniProt, GOC 등)
+#'     \item \code{reference}: 참고 문헌 및 근거 자료 ID
+#'     \item \code{date}: 주석 생성/수정 날짜
+#'     \item \strong{[기타 고급 필드]}
+#'     \item \code{taxon_label}: 생물종 명칭 (예: Mus musculus)
+#'     \item \code{qualifier}: 주석 수정자 (NOT, contributes_to 등)
+#'     \item \code{panther_family_label}: PANTHER 패밀리 명칭
+#'   } 
+get_GOID <-function(go_id,format="csv",nitems=100000,fl="bioentity,bioentity_label,annotation_class,evidence_type",recursive=T) {
+    base_url <- "https://golr-aux.geneontology.io/solr/select"
+
+    params <- list(
+        defType = "edismax",
+        qt = "standard",
+        wt = format,
+        rows = format(nitems, scientific = FALSE),
+        fl = "id,bioentity,bioentity_name,qualifier,annotation_class,assigned_by,taxon",
+        fq = "document_category:\"annotation\"",
+        # 리스트에 같은 이름의 인자를 여러 개 넣을 때 유용
+        fq = paste0("isa_partof_closure:\"", go_id, "\""),
+        fq = "taxon_subset_closure_label:\"Mus musculus\"",
+        csv.separator = "\t",
+        csv.header = "true",
+        q = "*:*"
+    )
+    url_obj <- parse_url(base_url)
+    url_obj$query <- params
+    final_url <- build_url(url_obj)
+    ##res <- httr::GET(base_url, query = params)
+    ##data <- content(res, as = "parsed", type = "text/tab-separated-values")
+    read_tsv(content(res, as = "text", encoding = "UTF-8"))
+
+}

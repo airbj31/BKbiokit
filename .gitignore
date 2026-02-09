@@ -1,2 +1,5 @@
 .Rproj.user
-tmp/*.r
+.Rhistory
+.RData
+.Ruserdata
+inst/doc

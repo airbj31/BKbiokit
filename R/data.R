@@ -10,3 +10,14 @@
 #'  \item{property}{chemical property}
 #'  }
 "standard_genetic_code"
+
+#' UCSC GRCm38 to mm10 gene symbol changes
+#'
+#' A dataset containing triplet codon(codon), 1-letter amino acids (AA1), 3-letter amino acids (AA3), and property (property)
+#'
+#' @format A data frame with 64 rows and 3 variables
+#' \describe{
+#'  \item{GRCm38}{UCSC/igenome gene symbol}
+#'  \item{GRCm39}{mm10 gene symbol}
+#'  }
+"GRCm38_to_GRCm39"

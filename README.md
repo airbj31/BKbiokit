@@ -9,26 +9,45 @@
   # install.packages("devtools") # if you do not install devtools please install it 
   devtools::install_github("airbj31/BKbiokit")
 ```
+
+## Help
+
+To learn how to use the package, please see the vignette.
+
+```r
+browseVignettes("BKbiokit")
+```
+
 ## Functions developed
 
 * for usage information, plz see `??<command>`
-* entiries without link are planning.
+* please note that entiries without links are planning/currently under development.
 
 ### FILE I/O
 
+for more example about the functions,please see the vignette.
+
+
 - [read_fastqc](./R/read_fastqc.R) is a function to load fastqc report file (.zip file) into R environment.
 - [read_fastqcdir](./R/read_fastqcdir.R) is a function to read all fastqc report files (.zip files) and aggregate them into one object.
-- [read_gff](./R/read_gff.R) is a gff parser which convert gff file into R list. attribute columns automatically divided into columns. so the function make the file easy to understand. ths lists were named as `Type` columns.
-- [read_phylip_dist](./R/read_phylip_dist.R)` reads phylip produced distance matrix file into R environment.
+- [read_gff](./R/read_gff.R) is a gff parser which convert gff file into R list. attribute columns automatically divided into columns. so the function make the file easy to understand. the lists were named as `Type` columns.
+- [write_gbff](./R/write_gbff.R) write genbank file format file[^2].
+- read_gbff read genbank flat format file[^3].
+- [read_phylip_dist](./R/read_phylip_dist.R) read phylip produced distance matrix file into R environment. The loaded distance matrix was automatically converted into `dist` object
 
 ### DATA manipulation.
 
 - [BWTcode and vBWTcode](./R/BWT.R) are function inspired by Burrow-Wheeler Transform and one-hot encoding. The function is developed to analyze short tandem repeats with K-mer approach. The main purpose of the program is merging repeat elements into one K-mer. e.g. `TTAGG`, `GTTAG`, `GGTTA`, `AGGTT`, `TAGGT` are merged into `AGGTT`.**plz note that the function choose 1st entry from sorting out all the possible k-mers lexicographical order.** When Reverse Complement options is on, we also consider the reverse complement using Biostrings::reverseComplement function. `vBWTcode` is vectorized function to use function in tidyverse way.  
+
   ```r
   BWTcode("TTAGGG",rc=FALSE)
   BWTcode("TTAGGG",rc=TRUE)
 
   ```
+- [getKmer](./R/getKmer.R)  - R version of K-mer extraction
+
+
+  
 ### NCBI E-utility and/or Related things
 
 NCBI E-utility APIs are implementing into `BKbiokit` for easy NCBI search.
@@ -56,16 +75,24 @@ NCBI E-utility APIs are implementing into `BKbiokit` for easy NCBI search.
 
 - [bioLinkGen](./R/bioLinkGen.R)
 
-  ```r 
+  ```{r cache=T} 
   ## bioLinkGen Usage
-  broweURL(bioLinkGen("SRR17041298"))     ## open SRR17041298 run
+  browseURL(bioLinkGen("SRR17041298"))     ## open SRR17041298 run
   bioLinkGen("SRR17041298",format="html") ## make link for SRR17041298
   ```
+
+### GEO
+
+- [searchGEO](./R/GEO.R)
+- [download_GEO](./R/GEO.R)
+- [read_GSE](./R/GEO.R)
+
+
 
 <!--
 
 
-- read_plink_ped()      - read plink version 1 file.
+- read_plink_ped()      - read plink version 1 file[^1].
 - read_plink_genome()   - read `--genome` output of plink
 - read_plink_miss()     - read `--miss` output of plink 
 - read_plink_pca()      - 
@@ -88,3 +115,11 @@ https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR11888826/SRR
 [^1] [plink v1.9](https://www.cog-genomics.org/plink2/)
 
 -->
+
+## References 
+
+[^1]: [plink v1.9](https://www.cog-genomics.org/plink2/)
+
+[^2]: [gb release file](https://ftp.ncbi.nih.gov/genbank/gbrel.txt)
+
+[^3]: [gbff file format](https://www.ncbi.nlm.nih.gov/datasets/docs/v1/reference-docs/file-formats/about-ncbi-gbff/)
