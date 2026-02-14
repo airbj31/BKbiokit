@@ -23,7 +23,7 @@
 #'     \item \code{qualifier}: 주석 수정자 (NOT, contributes_to 등)
 #'     \item \code{panther_family_label}: PANTHER 패밀리 명칭
 #'   } 
-get_GOID <-function(go_id,format="csv",nitems=100000,fl="bioentity,bioentity_label,annotation_class,evidence_type",recursive=T) {
+GOID2Symbols <-function(go_id,format="csv",nitems=100000,fl="bioentity,bioentity_label,annotation_class,evidence_type",recursive=T) {
     base_url <- "https://golr-aux.geneontology.io/solr/select"
 
     params <- list(
@@ -31,9 +31,8 @@ get_GOID <-function(go_id,format="csv",nitems=100000,fl="bioentity,bioentity_lab
         qt = "standard",
         wt = format,
         rows = format(nitems, scientific = FALSE),
-        fl = "id,bioentity,bioentity_name,qualifier,annotation_class,assigned_by,taxon",
+        fl = fl,
         fq = "document_category:\"annotation\"",
-        # 리스트에 같은 이름의 인자를 여러 개 넣을 때 유용
         fq = paste0("isa_partof_closure:\"", go_id, "\""),
         fq = "taxon_subset_closure_label:\"Mus musculus\"",
         csv.separator = "\t",
@@ -45,6 +44,6 @@ get_GOID <-function(go_id,format="csv",nitems=100000,fl="bioentity,bioentity_lab
     final_url <- build_url(url_obj)
     ##res <- httr::GET(base_url, query = params)
     ##data <- content(res, as = "parsed", type = "text/tab-separated-values")
-    read_tsv(content(res, as = "text", encoding = "UTF-8"))
+    read_tsv(final_url)
 
 }

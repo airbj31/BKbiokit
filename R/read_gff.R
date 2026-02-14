@@ -1,6 +1,8 @@
 #' read_gff
 #'
-#' read gff file into wide-form tibble Object.
+#' `read_gff` converts gff file into list of wide-form tibble Objects based on features.
+#'
+#' for the file format of gff, please see https://www.ensembl.org/info/website/upload/gff.html?redirect=no
 #'
 #' @param x gff file
 #' @return data frame which contained cleanned

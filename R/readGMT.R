@@ -1,5 +1,6 @@
-#' Read MySigDb gmt file format as a list of vectors.
+#' Read/Write MySigDb gmt file format
 #'
+#' @name read_gmt
 #' @author KIM, BYUNGJU
 #' @description Read GMT files into list object
 #' @param x gmt file name
@@ -15,8 +16,8 @@ read_GMT <- function(x,simple=TRUE) {
       element_name <- split_line[1]
       element_vector <- split_line[-c(1,2)]
       ##element_vector <- as.numeric(element_vector)
-      if(simple=T) {
-        result_list[[element_name]]$gene  <- element_vector
+      if(simple) {
+        result_list[[element_name]]  <- element_vector
       } else {
         result_list[[element_name]]$url   <- split_line[2]
         result_list[[element_name]]$genes <- element_vector
@@ -28,6 +29,7 @@ read_GMT <- function(x,simple=TRUE) {
 
 #' write GMT file from list vector
 #'
+#' @rdname read_gmt
 #' @param x list file.
 #' @param file output file
 #' @param url url

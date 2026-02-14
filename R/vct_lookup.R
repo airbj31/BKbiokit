@@ -1,9 +1,16 @@
-#' vector lookup / Dictionary Mapping
+#' @title vector lookup utility
 #'
-#' Maps elements of a vector using a named vector (dictionary-style lookup).
+#' @name vct_lookup
+#' @rdname vct_lookup
+NULL
+
+#' Vector lookup utility
+#'
+#' Maps elements of a vector using a named vector.
 #' Elements present in the dictionary keys are replaced with their corresponding values.
 #' Elements not found in the dictionary remain unchanged.
 #'
+#' @rdname vct_lookup
 #' @param query A vector to be mapped (Left Hand Side for the operator).
 #' @param ref A named vector serving as the lookup dictionary (Right Hand Side for the operator).
 #'   The names of the vector are the keys, and the values are the replacements.
@@ -31,10 +38,12 @@ vct_lookup <- function(query, ref) {
   # Logical indexing for fast vectorization
   matches <- query %in% names(ref)
   query[matches] <- ref[query[matches]]
-  
+
   return(query)
 }
 
-#' @rdname hash_lookup
+#' Vector lookup utility
+#'
+#' @rdname vct_lookup
 #' @export
-`%vlookup%` <- vct_lookup
+`%lookup%` <- vct_lookup
