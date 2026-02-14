@@ -13,5 +13,8 @@ read_gff(x, comment = "#")
 data frame which contained cleanned
 }
 \description{
-read gff file into wide-form tibble Object.
+\code{read_gff} converts gff file into list of wide-form tibble Objects based on features.
+}
+\details{
+for the file format of gff, please see https://www.ensembl.org/info/website/upload/gff.html?redirect=no
 }

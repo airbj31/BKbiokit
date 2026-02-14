@@ -23,12 +23,12 @@
 #' Followings are examples of search field tags from https://pubmed.ncbi.nlm.nih.gov/help/#proximity-searching.
 #' You may also get the information by `einfo(db="pubmed")$Field`
 #'
-#' | Affiliation [ad]      | All Fields [all]          | Article Identifier [aid]  |
-#' | --------------------- | ------------------------- | ------------------------- |
-#' | Author [au]           | Author Identifier [auid]  | Last Author Name [lastau] |
-#' | PMID [pmid]           | Title/Abstract [tiab]     | Grant Number [gr]         |
-#' | Publication Date [dp] | Title [ti]                | MeSH Terms [mh]           |
-#' | Text Words [tw]       | Title [ti]                | MeSH Major Topic [majr]   |
+#' | Affiliation \[ad]      | All Fields \[all]          | Article Identifier \[aid]  |
+#' | ---------------------- | -------------------------- | ------------------------- |
+#' | Author \[au]           | Author Identifier \[auid]  | Last Author Name \[lastau] |
+#' | PMID \[pmid]           | Title/Abstract \[tiab]     | Grant Number \[gr]         |
+#' | Publication Date \[dp] | Title \[ti]                | MeSH Terms \[mh]           |
+#' | Text Words \[tw]       | Title \[ti]                | MeSH Major Topic \[majr]   |
 
 esearch <- function(query,
                     db="pubmed",

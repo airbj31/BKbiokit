@@ -12,7 +12,7 @@ read_phylip_dist(file, rm.list = c(), skip = 1)
 
 \item{rm.list}{list for sample exclusion.}
 
-\item{skip}{a numeric valueof line skipping.}
+\item{skip}{a numeric value of line skipping.}
 }
 \description{
 read_phylip_dist: read Phylip style distance matrix as distance matrix in R

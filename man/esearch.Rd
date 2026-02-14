@@ -46,10 +46,10 @@ available DBs :
 
 Followings are examples of search field tags from https://pubmed.ncbi.nlm.nih.gov/help/#proximity-searching.
 You may also get the information by \code{einfo(db="pubmed")$Field}\tabular{lll}{
-   Affiliation \link{ad} \tab All Fields \link{all} \tab Article Identifier \link{aid} \cr
-   Author \link{au} \tab Author Identifier \link{auid} \tab Last Author Name \link{lastau} \cr
-   PMID \link{pmid} \tab Title/Abstract \link{tiab} \tab Grant Number \link{gr} \cr
-   Publication Date \link{dp} \tab Title \link{ti} \tab MeSH Terms \link{mh} \cr
-   Text Words \link{tw} \tab Title \link{ti} \tab MeSH Major Topic \link{majr} \cr
+   Affiliation [ad] \tab All Fields [all] \tab Article Identifier [aid] \cr
+   Author [au] \tab Author Identifier [auid] \tab Last Author Name [lastau] \cr
+   PMID [pmid] \tab Title/Abstract [tiab] \tab Grant Number [gr] \cr
+   Publication Date [dp] \tab Title [ti] \tab MeSH Terms [mh] \cr
+   Text Words [tw] \tab Title [ti] \tab MeSH Major Topic [majr] \cr
 }
 }
