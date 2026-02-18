@@ -2,6 +2,12 @@
 .Rhistory
 .RData
 .Ruserdata
+.DS_Store
+*/.DS_Store
+*.swo
+*.swn
+^.*\.swp$
+^.*\.swo$
 inst/doc
 backup
 tmp
