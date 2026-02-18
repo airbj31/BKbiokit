@@ -52,5 +52,3 @@ get_direct_children <- function(go_id, ontology = "CC") {
 
   return(result_df)
 }
-
-clock_gen, download_GEO, efetch, expit, get_GO_genes, get_direct_children, logit, makeGEOPath, read_GSE, read_GSM, read_geov2
