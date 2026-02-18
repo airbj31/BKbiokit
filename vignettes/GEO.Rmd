@@ -1,0 +1,88 @@
+---
+title: "Playing with GEO data"
+author: "Byungju.kim"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{GEO}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# introduction.
+
+This is a tool collection of BJK to play with GEO.
+
+
+# Relating Functions 
+
+## makeGEOPath
+
+- it returns the GSE style GSE directory name 
+
+
+### Usage
+
+```r
+makeGEOPath("GSE123")
+```
+
+## checkGEO
+
+- check GEO website and list the available data
+
+```{r}
+checkGEO <- function(GSE) {
+  seriesPath <- makeGEOPath(GSE,"")
+  ftp_base <- readLines(paste0("https://ftp.ncbi.nlm.nih.gov/geo/series/",seriesPath))
+  ftp_base <- paste0("https://ftp.ncbi.nlm.nih.gov/geo/series/",seriesPath)
+  list_files <- curl::new_handle()
+  curl::handle_setopt(list_files, ftp_use_epsv = TRUE, dirlistonly = TRUE)
+  con <- curl::curl(url = ftp_base, "r", handle = list_files)
+  return(tmp)
+}
+
+## ftp_base <- "ftp://"
+## list_files <- curl::new_handle()
+## curl::handle_setopt(list_files, ftp_use_epsv = TRUE, dirlistonly = TRUE)
+
+## con <- curl::curl(url = ftp_base, "r", handle = list_files)
+## files <- readLines(con)
+## close(con)
+
+```
+
+
+
+
+## download_GSE()
+
+```{r}
+#a <-getURL("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164637")
+#        url="https://ftp.ncbi.nlm.nih.gov/geo/series/"
+
+
+
+```
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Output
+
+```{r cars, echo = TRUE}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r pressure}
+plot(pressure)
+```
+

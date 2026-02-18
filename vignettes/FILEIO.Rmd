@@ -1,0 +1,27 @@
+---
+title: "FILE I/O"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{FILEIO}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup,eval=F}
+library(BKbiokit)
+```
+
+# Introduction
+
+This is example vignette for describing how to use File I/O function in the packages
+
+# read files
+
+
