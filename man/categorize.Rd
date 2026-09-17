@@ -2,7 +2,7 @@
 % Please edit documentation in R/categorize.R
 \name{categorize}
 \alias{categorize}
-\title{categorize the input column}
+\title{Categorize a Column Based on Conditions}
 \usage{
 categorize(
   data,
@@ -14,14 +14,70 @@ categorize(
 )
 }
 \arguments{
-\item{data}{data frame}
+\item{data}{A data frame containing the column to categorize.}
 
-\item{input_col}{input column}
+\item{input_col}{A character string naming the column to evaluate.}
 
-\item{output_col}{output column (categorized column)}
+\item{output_col}{A character string naming the new categorized column to create.}
 
-\item{lvl}{level}
+\item{conditions}{A named list of rule objects. Each rule is itself a list with
+either:
+\itemize{
+\item \code{op}, \code{threshold}, and \code{label} for numeric comparisons
+(e.g. \code{list(op = ">", threshold = 50, label = "High")}), or
+\item \code{values} and \code{label} for categorical matching
+(e.g. \code{list(values = c("Y", "Yes"), label = "Positive")}).
+}
+Rules are evaluated in order; the first match wins.}
+
+\item{lvl}{An optional character vector of factor levels. If provided, the
+output column is coerced to a \code{\link{factor}} with levels in the given
+order. Useful for downstream plotting or modelling that requires ordered
+categories. Defaults to \code{NULL} (plain character column).}
+
+\item{default}{The value assigned when no condition is matched. Defaults to
+\code{NA_character_}.}
+}
+\value{
+The input \code{data} frame with one additional column named
+\code{output_col}. If \code{lvl} is supplied the column is a factor,
+otherwise a character vector.
 }
 \description{
-The function categorize the column based on the colum value and. condition/rule.
+Creates a new categorical column in a data frame by applying a set of
+ordered conditions (rules) to an existing column. Supports both numeric
+comparison rules and categorical value-matching rules. Optionally converts
+the result to an ordered factor.
+}
+\details{
+Internally, the conditions are compiled into a \code{\link[dplyr]{case_when}}
+expression via a helper \code{build_case_when()}. Two validation checks are
+performed before mutation:
+\itemize{
+\item A numeric rule (\code{op} + \code{threshold}) applied to a non-numeric
+column raises an \strong{error}.
+\item A categorical rule whose \code{values} are numeric but \code{input_col}
+is non-numeric raises a \strong{warning}, as implicit coercion may produce
+unexpected results.
+}
+}
+\examples{
+df <- data.frame(score = c(30, 55, 80, NA))
+
+rules <- list(
+  list(op = "<",  threshold = 40, label = "Low"),
+  list(op = "<=", threshold = 60, label = "Mid"),
+  list(op = ">",  threshold = 60, label = "High")
+)
+
+# Basic numeric categorisation
+categorize(df, "score", "grade", conditions = rules, default = "Unknown")
+
+# With ordered factor output
+categorize(df, "score", "grade", conditions = rules,
+           lvl = c("Low", "Mid", "High"), default = "Unknown")
+
+}
+\seealso{
+\code{\link[dplyr]{case_when}}, \code{\link[dplyr]{mutate}}
 }

@@ -14,7 +14,7 @@ A data frame with 64 rows and 3 variables
 }
 }
 \usage{
-standard_genetic_code
+data(standard_genetic_code)
 }
 \description{
 A dataset containing triplet codon(codon), 1-letter amino acids (AA1), 3-letter amino acids (AA3), and property (property)

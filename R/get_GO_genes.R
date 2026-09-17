@@ -52,3 +52,50 @@ get_direct_children <- function(go_id, ontology = "CC") {
 
   return(result_df)
 }
+
+library(AnnotationDbi)
+library(org.Mm.eg.db)
+library(GO.db)
+library(dplyr)
+
+get_gogenes_recursive <- function(go_id, org_db = org.Mm.eg.db, evidence_filter = c("EXP", "IDA")) {
+  # 1. Ontology 종류 판별 (BP, CC, MF)
+  ont_type <- tryCatch(AnnotationDbi::Ontology(go_id), error = function(e) return(NULL))
+  if (is.null(ont_type)) return(NULL)
+  # 2. 해당 Ontology에 맞는 Offspring DB 선택
+  offspring_map <- switch(ont_type,
+                          "BP" = GOBPOFFSPRING,
+                          "CC" = GOCCOFFSPRING,
+                          "MF" = GOMFOFFSPRING)
+  # 3. 하위 ID 추출 (자신 포함)
+  # mget은 ID가 없을 경우 에러 대신 list(NULL)을 반환하여 안전함
+  offspring_ids <- unlist(mget(go_id, offspring_map, ifnotfound = NA))
+  all_ids <- unique(c(go_id, offspring_ids))
+  all_ids <- all_ids[!is.na(all_ids)]
+  # 4. 유전자 추출 (Direct Mapping 'GO' 사용)
+  # keys가 유효한지 사전에 검사하여 에러 방지
+  valid_keys <- intersect(all_ids, keys(org_db, keytype = "GO"))
+  if (length(valid_keys) == 0) {
+    return(NULL)
+  }
+  tryCatch({
+    go_data <- AnnotationDbi::select(x = org_db,
+                                     keys = valid_keys,
+                                     keytype = "GO",
+                                     columns = c("EVIDENCE", "SYMBOL"))
+    # 5. Evidence 필터링
+    if (!is.null(evidence_filter)) {
+      filtered_symbols <- go_data %>%
+        filter(EVIDENCE %in% evidence_filter) %>%
+        pull(SYMBOL) %>%
+        unique() %>%
+        na.omit()
+      return(as.character(filtered_symbols))
+    } else {
+      return(unique(na.omit(go_data$SYMBOL)))
+    }
+  }, error = function(e) {
+    message("Error in select for ", go_id, ": ", e$message)
+    return(NULL)
+  })
+}

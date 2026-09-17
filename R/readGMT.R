@@ -35,10 +35,25 @@ read_GMT <- function(x,simple=TRUE) {
 #' @param url url
 #' @return saving file.
 #' @export
-write_GMT <-function(x,file,url="BKbiokit") {
-  text <-c()
-  for(i in names(x)) {
-    text <- c(text,paste0(paste0(i,"\t",x[[i]][["url"]],collapse="\t"),"\t",paste0(x[[i]][["genes"]],collapse="\t"),collapse="\t"))
+write_gmt <- function (x, file, url = "BKbiokit")
+{
+  tmp<-list()
+  text <- c()
+  for (i in names(x)) {
+    if ("url" %in% names(x[[i]])) {
+      current_url <- x[[i]][["url"]]
+    } else {
+      current_url <- url
+    }
+    if (!"genes" %in% names(x[[i]])) {
+      text <- c(text, paste0(paste0(i, "\t", current_url,
+                                    collapse = "\t"), "\t", paste0(x[[i]],
+                                                                   collapse = "\t"), collapse = "\t"))
+    } else {
+    text <- c(text, paste0(paste0(i, "\t", current_url,
+                                  collapse = "\t"), "\t", paste0(x[[i]][["genes"]],
+                                                                 collapse = "\t"), collapse = "\t"))
+    }
   }
-  cat(trimws(text),file=file,sep = "\n")
+  cat(trimws(text), file = file, sep = "\n")
 }

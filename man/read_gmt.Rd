@@ -3,12 +3,12 @@
 \name{read_gmt}
 \alias{read_gmt}
 \alias{read_GMT}
-\alias{write_GMT}
+\alias{write_gmt}
 \title{Read/Write MySigDb gmt file format}
 \usage{
 read_GMT(x, simple = TRUE)
 
-write_GMT(x, file, url = "BKbiokit")
+write_gmt(x, file, url = "BKbiokit")
 }
 \arguments{
 \item{x}{list file.}
