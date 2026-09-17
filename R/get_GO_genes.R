@@ -32,32 +32,90 @@ get_GO_genes <- function(go_id, org_db = org.Mm.eg.db, evidence_filter = c("EXP"
 #' @param ontology CC or BP or MF
 #' @export
 get_direct_children <- function(go_id, ontology = "CC") {
-  map_obj <- switch(ontology,
-                    "CC" = GOCCCHILDREN,
-                    "BP" = GOBPCHILDREN,
-                    "MF" = GOMFCHILDREN)
-  children_ids_list <- mget(go_id, map_obj, ifnotfound = NA)
-  children_ids <- children_ids_list[[1]]
-  if (any(is.na(children_ids))) {
-    message(paste("No children found for:", go_id, "(It might be a leaf node)"))
-    return(NULL)
-  }
-  children_names <- Term(children_ids)
-  result_df <- data.frame(
-    GO_ID = names(children_names),
-    Term_Name = children_names,
-    stringsAsFactors = FALSE
-  )
-  rownames(result_df) <- NULL
 
-  return(result_df)
-}
+    # 1. 맵 객체 설정 (Children 대신 Offspring을 원하신다면 OFFSPRING으로 변경 가능)
+    # 패키지 내부에 이 객체들이 로드되어 있어야 합니다.
+    map_obj <- switch(ontology,
+                      CC = GO.db::GOCCCHILDREN,
+                      BP = GO.db::GOBPCHILDREN,
+                      MF = GO.db::GOMFCHILDREN)
+
+    # 2. mget 대신 AnnotationDbi::exists와 get을 조합하여 안전하게 추출
+    # mget은 환경 객체 조건이 까다롭지만, get은 Bimap 객체도 잘 처리합니다.
+    if (!AnnotationDbi::exists(go_id, map_obj)) {
+      message(paste("No children found for:", go_id, "(It might be a leaf node or invalid ID)"))
+      return(NULL)
+    }
+
+    children_ids <- AnnotationDbi::get(go_id, map_obj)
+
+    # NA 처리
+    children_ids <- children_ids[!is.na(children_ids)]
+
+    if (length(children_ids) == 0) {
+      return(NULL)
+    }
+
+    # 3. Term 정보 가져오기
+    children_names <- AnnotationDbi::Term(children_ids)
+
+    # 4. 데이터프레임 생성
+    result_df <- data.frame(
+      GO_ID = names(children_names),
+      Term_Name = as.character(children_names),
+      stringsAsFactors = FALSE
+    )
+
+    rownames(result_df) <- NULL
+    return(result_df)
+  }
 
 library(AnnotationDbi)
 library(org.Mm.eg.db)
 library(GO.db)
 library(dplyr)
 
+#' Extract Genes for a GO Term with Evidence-Based Recursive Mapping
+#'
+#' This function retrieves a list of gene symbols associated with a specific GO ID
+#' and all its descendant (offspring) terms. Unlike the standard `GOALL` mapping,
+#' this function allows for strict filtering based on Evidence Codes before
+#' aggregating genes across the GO hierarchy.
+#'
+#' @param go_id Character. The parent Gene Ontology ID (e.g., "GO:0002376").
+#' @param org_db An AnnotationDb object. The organism-specific database
+#'   (default: `org.Mm.eg.db`).
+#' @param evidence_filter Character vector. A list of GO evidence codes to include
+#'   (e.g., `c("EXP", "IDA")` for experimental levels, or `c("EXP", "IDA", "IEA")`
+#'   to include electronic annotations). If NULL, all evidence codes are included.
+#'
+#' @return A character vector of unique gene symbols. Returns `NULL` if no genes
+#'   are found or if an error occurs.
+#'
+#' @details
+#' The standard `keytype = "GOALL"` approach relies on a pre-computed table that
+#' merges all evidence types, which can lead to "data dilution" by low-confidence
+#' annotations (like IEA) across all levels.
+#'
+#' This function ensures data integrity by:
+#' 1. Identifying all offspring nodes using the `GO.db` hierarchy.
+#' 2. Querying each node individually using `keytype = "GO"` (Direct Annotation).
+#' 3. Filtering by the user-defined evidence codes at each step.
+#'
+#' This is particularly useful for creating multi-omics feature sets (GMT files)
+#' categorized by different biological confidence levels.
+#'
+#' @examples
+#' \dontrun{
+#' # Level 1: Experimental evidence only
+#' genes_lvl1 <- get_filtered_recursive_genes("GO:0002376",
+#'                                             evidence_filter = c("EXP", "IDA"))
+#'
+#' # Level 4: Including electronic annotations (IEA)
+#' genes_lvl4 <- get_filtered_recursive_genes("GO:0002376",
+#'                                             evidence_filter = c("EXP", "IDA", "IEA"))
+#' }
+#' @export
 get_gogenes_recursive <- function(go_id, org_db = org.Mm.eg.db, evidence_filter = c("EXP", "IDA")) {
   # 1. Ontology 종류 판별 (BP, CC, MF)
   ont_type <- tryCatch(AnnotationDbi::Ontology(go_id), error = function(e) return(NULL))

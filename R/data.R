@@ -36,5 +36,5 @@
 #'   \item{description}{A full definition of what the specific evidence code represents.}
 #' }
 #' @source \url{http://geneontology.org/docs/guide-go-evidence-codes/}
-#' @usage data(GO_evidence_meta)
+#' @usage data(go_evidence_meta)
 "go_evidence_meta"
