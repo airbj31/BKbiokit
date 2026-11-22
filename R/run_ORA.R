@@ -3,6 +3,22 @@
 
 .ora_stop <- function(...) stop(..., call. = FALSE)
 
+# Pseudocount for the plotting effect size log2((k + c) / (expected + c)).
+ORA_LOG2_OE_PSEUDOCOUNT <- 0.5
+
+# Two-sided hypergeometric p-value, identical to stats::fisher.test(two.sided)
+# on the subset table [k, n-k; K-k, M-n-K+k]: sum of probabilities of all
+# overlaps no more likely than the observed one (same 1e-7 relative tolerance).
+.ora_hyper_two_sided <- function(k, K, M, n) {
+  lo <- max(0L, n - (M - K))
+  hi <- min(n, K)
+  support <- lo:hi
+  d <- stats::dhyper(support, K, M - K, n, log = TRUE)
+  d <- exp(d - max(d))
+  d <- d / sum(d)
+  min(1, sum(d[d <= d[k - lo + 1L] * (1 + 1e-7)]))
+}
+
 .ora_stable_unique <- function(x) x[!duplicated(x)]
 
 .ora_normalize_ids <- function(x, label, allow_whole_number_numeric = FALSE) {
@@ -211,6 +227,12 @@
 #'   NULL uses that cap. min_size must not exceed the effective max_size.
 #' @param engine deterministic engine: "base" (default) or explicitly "fgsea".
 #' @param allow_whole_number_numeric permit explicitly audited whole-number doubles.
+#' @details Results contain the original one-sided enrichment test (pvalue, padj)
+#'   and a two-sided test (pvalue_two_sided, padj_two_sided) that evaluates
+#'   enrichment and depletion in one test per pathway, with one BH adjustment
+#'   across all tested pathways. direction is a label (observed vs expected),
+#'   not a test selector. The two-sided test always uses base R (fgsea::fora is
+#'   one-sided only).
 #' @return list with results (tested pathways only), coverage, pathway_audit
 #'   (all pathways, descriptions and filtering status), gene_audit, and parameters
 #'   (shared analysis settings and engine metadata). Join results to pathway_audit
@@ -289,6 +311,20 @@ run_ora <- function(
   padj <- rep(NA_real_, length(pathways_raw))
   padj[tested] <- stats::p.adjust(pvalue[tested], method = "BH")
 
+  # Two-sided test: one p-value per pathway, one BH adjustment over all tested.
+  p_two <- rep(NA_real_, length(pathways_raw))
+  p_two[tested] <- mapply(
+    .ora_hyper_two_sided, k[tested], K[tested],
+    MoreArgs = list(M = M, n = n_query)
+  )
+  padj_two <- rep(NA_real_, length(pathways_raw))
+  padj_two[tested] <- stats::p.adjust(p_two[tested], method = "BH")
+  # Direction label from exact integer comparison k/n vs K/M (k*M vs n*K).
+  obs_vs_exp <- as.numeric(k) * M - as.numeric(n_query) * K
+  direction <- ifelse(obs_vs_exp > 0, "enriched",
+                      ifelse(obs_vs_exp < 0, "depleted", "as_expected"))
+  direction[!tested] <- NA_character_
+
   engine_version <- paste0("R-", as.character(getRversion()), "/stats")
   engine_built <- R.version.string
   engine_library_path <- normalizePath(.Library, mustWork = TRUE)
@@ -361,6 +397,14 @@ run_ora <- function(
     check.names = FALSE
   )
   results$overlap_genes <- I(overlap_genes)
+  # New columns are appended so the original column order is unchanged.
+  results$log2_oe_pseudo <- ifelse(
+    is.na(expected), NA_real_,
+    log2((k + ORA_LOG2_OE_PSEUDOCOUNT) / (expected + ORA_LOG2_OE_PSEUDOCOUNT))
+  )
+  results$pvalue_two_sided <- p_two
+  results$padj_two_sided <- padj_two
+  results$direction <- direction
   results <- results[tested, , drop = FALSE]
   rownames(results) <- NULL
 
@@ -460,7 +504,8 @@ run_ora <- function(
       "requested_engine", "resolved_engine", "engine_version", "engine_built",
       "engine_library_path", "R_version", "query_unique_sha256",
       "background_unique_sha256", "id_hash_canonicalization",
-      "background_definition"
+      "background_definition", "two_sided_test", "two_sided_p_adjust_method",
+      "log2_oe_pseudocount"
     ),
     value = c(
       prepared$source_type, prepared$source, min_size, max_size, "BH",
@@ -468,7 +513,10 @@ run_ora <- function(
       engine_version, engine_built, engine_library_path, R.version.string,
       query_unique_sha256, background_unique_sha256,
       "stable first-occurrence unique ID sequence; one UTF-8 ID per line with final LF",
-      "Caller-supplied genes eligible to enter query after the same assay/contrast filtering and ID mapping"
+      "Caller-supplied genes eligible to enter query after the same assay/contrast filtering and ID mapping",
+      "Two-sided Fisher's exact (hypergeometric, query subset of background; minimum-likelihood rule), base R",
+      "BH once across all tested pathways (both directions)",
+      format(ORA_LOG2_OE_PSEUDOCOUNT, scientific = FALSE, trim = TRUE)
     ),
     stringsAsFactors = FALSE
   )
@@ -638,6 +686,44 @@ run_ora_self_tests <- function() {
     ), nrow = 2L)
     fisher_p <- stats::fisher.test(tab, alternative = "greater")$p.value
     stopifnot(isTRUE(all.equal(fisher_p, tested_rows$pvalue[[i]], tolerance = 1e-14)))
+    fisher_two <- stats::fisher.test(tab, alternative = "two.sided")$p.value
+    stopifnot(isTRUE(all.equal(fisher_two, tested_rows$pvalue_two_sided[[i]], tolerance = 1e-12)))
+  }
+  stopifnot(
+    identical(x$results$padj_two_sided, stats::p.adjust(x$results$pvalue_two_sided, "BH")),
+    all(x$results$pvalue_two_sided >= x$results$pvalue - 1e-15 |
+          x$results$direction == "depleted"),
+    x$parameters$value[x$parameters$key == "log2_oe_pseudocount"] == "0.5"
+  )
+
+  # Larger synthetic case: one enriched, one depleted, one neutral, one tiny term.
+  bg_big <- sprintf("g%04d", 1:2000)
+  q_big <- bg_big[1:400]
+  sets_big <- list(
+    big_depleted = bg_big[1001:1300],              # K=300, k=0,  expected=60
+    big_neutral  = bg_big[c(1:60, 1001:1240)],     # K=300, k=60, expected=60
+    small        = bg_big[1501:1505],              # K=5,   k=0,  expected=1
+    enriched     = bg_big[c(1:40, 1601:1610)]      # K=50,  k=40, expected=10
+  )
+  r <- run_ora(sets_big, q_big, bg_big)$results
+  stopifnot(
+    identical(r$direction, c("depleted", "as_expected", "depleted", "enriched")),
+    r$padj_two_sided[r$pathway == "big_depleted"] < 1e-10,
+    r$padj_two_sided[r$pathway == "enriched"] < 1e-10,
+    r$padj_two_sided[r$pathway == "small"] > 0.05,       # too small to call depletion
+    r$pvalue_two_sided[r$pathway == "big_neutral"] > 0.5,
+    r$pvalue[r$pathway == "big_depleted"] == 1,          # one-sided cannot see depletion
+    r$log2_oe_pseudo[r$pathway == "big_neutral"] == 0,
+    all(is.finite(r$log2_oe_pseudo)),
+    isTRUE(all.equal(r$log2_oe_pseudo[r$pathway == "big_depleted"], log2(0.5 / 60.5))),
+    identical(r$padj_two_sided, stats::p.adjust(r$pvalue_two_sided, "BH"))
+  )
+  for (i in seq_len(nrow(r))) {
+    tab <- matrix(c(r$overlap_size_k[[i]], r$query_not_in_pathway[[i]],
+                    r$background_nonquery_in_pathway[[i]],
+                    r$background_nonquery_not_in_pathway[[i]]), nrow = 2L)
+    stopifnot(isTRUE(all.equal(stats::fisher.test(tab)$p.value,
+                               r$pvalue_two_sided[[i]], tolerance = 1e-12)))
   }
 
   for (M0 in 2:10) for (n0 in seq_len(M0)) for (K0 in seq_len(M0 - 1L)) {
@@ -648,6 +734,9 @@ run_ora_self_tests <- function() {
       tab <- matrix(c(k0, K0 - k0, n0 - k0, M0 - K0 - n0 + k0), nrow = 2L)
       p_fisher <- stats::fisher.test(tab, alternative = "greater")$p.value
       stopifnot(isTRUE(all.equal(p_hyper, p_fisher, tolerance = 1e-13)))
+      p_two <- .ora_hyper_two_sided(k0, K0, M0, n0)
+      p_fisher_two <- stats::fisher.test(tab, alternative = "two.sided")$p.value
+      stopifnot(isTRUE(all.equal(p_two, p_fisher_two, tolerance = 1e-12)))
     }
   }
 

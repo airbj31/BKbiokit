@@ -2,7 +2,7 @@
 % Please edit documentation in R/fgseaSubset.R
 \name{fgseaSubset}
 \alias{fgseaSubset}
-\title{Preranked GSEA with per-subset contribution and NES}
+\title{Preranked GSEA with per-subset share of each pathway's NES}
 \usage{
 fgseaSubset(
   pathways,
@@ -10,9 +10,11 @@ fgseaSubset(
   subsets,
   minSize = 1,
   maxSize = length(stats) - 1,
-  subsetMinSize = 1,
   gseaParam = 1,
   scoreType = c("std", "pos", "neg"),
+  format = c("long", "wide"),
+  subsetTest = FALSE,
+  subsetMinSize = 1,
   strictSubsets = TRUE,
   ...
 )
@@ -26,70 +28,90 @@ the background (universe).}
 \item{subsets}{Named list of character vectors, e.g.
 \code{list(subsetA = c("123","234"), subsetB = c("134","156"))}.
 Every gene must be present in \code{names(stats)} (see \code{strictSubsets}).
-Subsets may overlap; in that case the per-pathway proportions of the
-subsets can sum to more than 1.}
+Subsets may overlap; in that case shares can sum to more than 100 \%.}
 
 \item{minSize, maxSize}{Pathway size filters passed to \code{fgsea::fgsea()}.}
 
-\item{subsetMinSize}{Minimal size of \code{intersect(pathway, subset)} for which
-a subset-level ES/NES is computed. Smaller overlaps still get the
-proportion columns but NA for the subset enrichment columns.}
-
 \item{gseaParam}{GSEA weight parameter (passed to fgsea and used here).}
 
-\item{scoreType}{"std", "pos" or "neg" (passed to fgsea and used here).}
+\item{scoreType}{"std", "pos" or "neg" (passed to fgsea).}
+
+\item{format}{"long" (default): one row per (pathway, subset), with a
+\code{subset} column. "wide": one row per pathway, subset columns prefixed
+with the subset name, e.g. \code{subsetA_pctNES}.}
+
+\item{subsetTest}{If TRUE, additionally run an independent fgsea test on
+\code{intersect(pathway, subset)} as its own gene set (columns prefixed
+\code{indep}). Off by default because it costs one extra fgsea run.}
+
+\item{subsetMinSize}{Minimal overlap size for the independent test.}
 
 \item{strictSubsets}{If TRUE (default) an error is raised when a subset
 contains genes missing from \code{names(stats)}. If FALSE, those genes are
 dropped with a warning.}
 
 \item{...}{Further arguments for \code{fgsea::fgsea()} (e.g. \code{eps}, \code{nproc},
-\code{sampleSize}, \code{nPermSimple}, \code{BPPARAM}, or \code{nperm} to force
-\code{fgseaSimple}). They are used for both the pathway-level and the
-subset-level runs.}
+\code{nPermSimple}, \code{BPPARAM}, or \code{nperm} to force \code{fgseaSimple}).}
 }
 \value{
-A \code{data.table} in long format with one row per
-(pathway, subset) pair. Pathway-level columns are the usual fgsea
-columns (\code{pathway}, \code{pval}, \code{padj}, \code{log2err}, \code{ES}, \code{NES}, \code{size},
-\code{leadingEdge}), repeated for each subset. Subset-level columns:
+A \code{data.table}. Pathway-level columns are the usual fgsea columns
+(\code{pathway}, \code{pval}, \code{padj}, \code{log2err}, \code{ES}, \code{NES}, \code{size},
+\code{leadingEdge}). Per-subset columns (long format; in wide format each is
+prefixed with \verb{<subsetName>_} and the \code{subset} column is dropped):
 \itemize{
 \item \code{subset} -- name of the subset;
-\item \code{subsetSize} -- number of subset genes in the pathway
-(after restricting to the background);
-\item \code{subsetLESize} -- number of subset genes in the pathway's
-leading edge;
-\item \code{subsetPropSize} -- \code{subsetSize / size};
-\item \code{subsetPropLE} -- \code{subsetLESize / length(leadingEdge)};
-\item \code{subsetPropWeight} -- share of the leading-edge hit weight
-(sum of |stat|^gseaParam over leading-edge genes) that comes from
-subset genes. This is the weighted "effect in proportion";
-\item \code{subsetLeadingEdge} -- subset genes in the leading edge (list);
-\item \code{subsetES}, \code{subsetNES}, \code{subsetPval}, \code{subsetPadj},
-\code{subsetLog2err} (or \code{subsetNMoreExtreme} when \code{nperm} is used) --
-fgsea results for \code{intersect(pathway, subset)} as a gene set.
-\code{subsetPadj} is BH-adjusted across all (pathway, subset) tests.
+\item \code{nGenes} -- number of subset genes in the pathway;
+\item \code{pctSize} -- \code{100 * nGenes / size};
+\item \code{nLE} -- number of subset genes in the pathway's leading edge;
+\item \code{pctLE} -- \code{100 * nLE / length(leadingEdge)};
+\item \code{pctNES} -- percentage of the pathway's enrichment carried by the
+subset: share of leading-edge weight \verb{sum(|stat|^gseaParam)};
+\item \code{NEScontrib} -- \code{NES * pctNES / 100}, the subset's contribution
+to the pathway NES (additive over a partition of the pathway);
+\item \code{EScontrib} -- \code{ES * pctNES / 100};
+\item \code{nLEopp} -- number of subset leading-edge genes whose statistic
+has the opposite sign to the pathway's ES (moving against the
+pathway direction);
+\item \code{pctNESdir} -- direction-aware share. Each leading-edge gene's
+weight is signed: \verb{+|stat|^gseaParam} if the gene moves in the
+pathway direction, \verb{-|stat|^gseaParam} if against it. \code{pctNESdir}
+is the sum of the subset's signed weights over the total absolute
+leading-edge weight, times 100. Ranges from -100 to 100 and equals
+\code{pctNES} when no subset gene opposes the pathway direction;
+\item \code{NEScontribDir} -- \code{NES * pctNESdir / 100};
+\item \code{meanStat} -- mean of the raw ranking statistic over the subset
+genes in the pathway (all of them, not only the leading edge). Its
+sign is the subset's own direction, its magnitude the amount;
+\item \code{genes} -- subset genes in the pathway (list column);
+\item \code{leGenes} -- subset genes in the leading edge (list column).
+\item with \code{subsetTest = TRUE}: \code{indepES}, \code{indepNES}, \code{indepPval},
+\code{indepPadj}, \code{indepLog2err} (or \code{indepNMoreExtreme} with \code{nperm})
+for \code{intersect(pathway, subset)} tested as its own gene set.
 }
-Rows are ordered by pathway then subset. Use \code{data.table::dcast()}
-for a wide layout.
 }
 \description{
-Runs \code{fgsea::fgsea()} on \code{pathways} against \code{stats}, then, for every
-pathway and every named gene subset in \code{subsets}, reports
+Runs \code{fgsea::fgsea()} ONCE on \code{pathways} against \code{stats}. Then, for every
+pathway and every named gene subset in \code{subsets}, it attributes a share of
+the pathway's enrichment to the subset genes. Nothing is re-tested: the
+pathway NES is computed a single time and split among the subsets.
 }
 \details{
-\enumerate{
-\item how much of the pathway's enrichment is carried by the subset genes
-(proportions of pathway size, leading-edge size and leading-edge
-weight), and
-\item an independent ES / NES / p-value for the subset genes that fall in
-the pathway, treating \code{intersect(pathway, subset)} as its own gene set
-against the same ranked background.
-}
+How the split works: the GSEA enrichment score is the peak of a running
+sum in which every leading-edge gene adds \verb{|stat|^gseaParam}. The share of
+that leading-edge weight carried by a subset's genes is the subset's share
+of the enrichment. For a partition of the pathway (e.g. a subset and its
+complement) the shares add up to 100 \% and the NES contributions add up
+to the pathway NES.
+
+A direction-aware variant (\code{pctNESdir}) additionally signs each
+leading-edge gene's weight by whether the gene moves with or against the
+pathway direction.
 }
 \examples{
 library(fgsea)
 data(examplePathways); data(exampleRanks)
 subs <- list(A = names(exampleRanks)[1:200], B = names(exampleRanks)[201:600])
-res <- fgseaSubset(examplePathways[1:20], exampleRanks, subs, minSize = 15, maxSize = 500)
+fgseaSubset(examplePathways[1:20], exampleRanks, subs, minSize = 15, maxSize = 500)
+fgseaSubset(examplePathways[1:20], exampleRanks, subs, minSize = 15, maxSize = 500,
+            format = "wide")
 }

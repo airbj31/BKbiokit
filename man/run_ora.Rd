@@ -39,3 +39,11 @@ by pathway or pathway_index; pathway_index preserves the original input index.
 \description{
 Run local over-representation analysis.
 }
+\details{
+Results contain the original one-sided enrichment test (pvalue, padj)
+and a two-sided test (pvalue_two_sided, padj_two_sided) that evaluates
+enrichment and depletion in one test per pathway, with one BH adjustment
+across all tested pathways. direction is a label (observed vs expected),
+not a test selector. The two-sided test always uses base R (fgsea::fora is
+one-sided only).
+}

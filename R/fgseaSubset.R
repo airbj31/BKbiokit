@@ -81,6 +81,7 @@
 #' fgseaSubset(examplePathways[1:20], exampleRanks, subs, minSize = 15, maxSize = 500)
 #' fgseaSubset(examplePathways[1:20], exampleRanks, subs, minSize = 15, maxSize = 500,
 #'             format = "wide")
+#' @export
 fgseaSubset <- function(pathways,
                         stats,
                         subsets,
@@ -170,13 +171,16 @@ fgseaSubset <- function(pathways,
 
     ## ---- 4. combine ----------------------------------------------------------
     out <- merge(mainRes, shareTab, by = "pathway", all.x = TRUE, sort = FALSE)
-    out[, subset := factor(subset, levels = subsetNames)]
-    data.table::setorder(out, pathway, subset)
-    out[, subset := as.character(subset)]
+    # Order: pathway, then subsets in the order given by the user.
+    # data.table::set()/setorderv() are used (not `[` with `:=`) so the function
+    # also works when sourced from an environment that is not data.table-aware.
+    data.table::set(out, j = ".subsetOrd", value = match(out$subset, subsetNames))
+    data.table::setorderv(out, c("pathway", ".subsetOrd"))
+    data.table::set(out, j = ".subsetOrd", value = NULL)
     data.table::setcolorder(out, c(mainCols, setdiff(names(out), mainCols)))
 
     if (format == "wide") out <- .toWide(out, mainCols, subsetNames)
-    out[]
+    out
 }
 
 ## Names of the independent-test columns derived from the fgsea columns present.
@@ -186,7 +190,7 @@ fgseaSubset <- function(pathways,
 .independentSubsetTest <- function(pathwayNames, pathways, universe, subsets, stats,
                                    subsetMinSize, gseaParam, scoreType, statCols, ...) {
     keys <- data.table::CJ(pathway = pathwayNames, subset = names(subsets), sorted = FALSE)
-    keys[, key := sprintf("k%06d", .I)]
+    data.table::set(keys, j = "key", value = sprintf("k%06d", seq_len(nrow(keys))))
     subPathways <- lapply(seq_len(nrow(keys)), function(i) {
         g <- intersect(intersect(pathways[[keys$pathway[i]]], universe), subsets[[keys$subset[i]]])
         if (length(g) >= max(1L, subsetMinSize)) g else NULL
@@ -194,8 +198,9 @@ fgseaSubset <- function(pathways,
     names(subPathways) <- keys$key
     subPathways <- Filter(Negate(is.null), subPathways)
 
-    empty <- keys[, .(pathway, subset)]
-    for (cc in .indepNames(statCols)) empty[, (cc) := NA_real_]
+    pairs <- data.table::data.table(pathway = keys$pathway, subset = keys$subset)
+    empty <- data.table::copy(pairs)
+    for (cc in .indepNames(statCols)) data.table::set(empty, j = cc, value = NA_real_)
     if (length(subPathways) == 0) return(empty)
 
     res <- data.table::as.data.table(
@@ -204,24 +209,29 @@ fgseaSubset <- function(pathways,
                      gseaParam = gseaParam, scoreType = scoreType, ...))
     data.table::setnames(res, "pathway", "key")
     res <- merge(keys, res, by = "key", all.y = TRUE, sort = FALSE)
-    res[, c("key", "size", "leadingEdge") := NULL]
+    data.table::set(res, j = c("key", "size", "leadingEdge"), value = NULL)
     old <- setdiff(names(res), c("pathway", "subset"))
     data.table::setnames(res, old, .indepNames(old))
-    res <- merge(empty[, .(pathway, subset)], res, by = c("pathway", "subset"), all.x = TRUE, sort = FALSE)
-    for (cc in .indepNames(statCols)) if (!cc %in% names(res)) res[, (cc) := NA_real_]
+    res <- merge(pairs, res, by = c("pathway", "subset"), all.x = TRUE, sort = FALSE)
+    for (cc in .indepNames(statCols)) if (!cc %in% names(res)) data.table::set(res, j = cc, value = NA_real_)
     res
 }
 
 ## Long -> wide: one row per pathway, subset columns prefixed with the subset name.
 .toWide <- function(out, mainCols, subsetNames) {
     subCols <- setdiff(names(out), c(mainCols, "subset"))
-    wide <- unique(out[, mainCols, with = FALSE], by = "pathway")
+    wide <- unique(.selectDT(out, seq_len(nrow(out)), mainCols), by = "pathway")
     for (sn in subsetNames) {
-        part <- out[subset == sn, c("pathway", subCols), with = FALSE]
+        part <- .selectDT(out, which(out$subset == sn), c("pathway", subCols))
         data.table::setnames(part, subCols, paste0(sn, "_", subCols))
         wide <- merge(wide, part, by = "pathway", all.x = TRUE, sort = FALSE)
     }
     wide
+}
+
+## Row/column subset of a data.table without `[`, so it works from any environment.
+.selectDT <- function(dt, rows, cols) {
+    data.table::setDT(lapply(as.list(dt)[cols], function(col) col[rows]))
 }
 
 ## Validate the `subsets` argument. Returns the (possibly cleaned) list.
@@ -264,12 +274,13 @@ fgseaSubset <- function(pathways,
 ## Zero-row result with the full column set.
 .emptySubsetResult <- function(mainRes, indepCols, format, subsetNames) {
     out <- data.table::copy(mainRes)
-    out[, `:=`(subset = character(), nGenes = integer(), pctSize = numeric(),
-               nLE = integer(), pctLE = numeric(), pctNES = numeric(),
-               NEScontrib = numeric(), EScontrib = numeric(),
-               nLEopp = integer(), pctNESdir = numeric(), NEScontribDir = numeric(),
-               meanStat = numeric(), genes = list(), leGenes = list())]
-    for (cc in indepCols) out[, (cc) := numeric()]
+    template <- list(subset = character(), nGenes = integer(), pctSize = numeric(),
+                     nLE = integer(), pctLE = numeric(), pctNES = numeric(),
+                     NEScontrib = numeric(), EScontrib = numeric(),
+                     nLEopp = integer(), pctNESdir = numeric(), NEScontribDir = numeric(),
+                     meanStat = numeric(), genes = list(), leGenes = list())
+    for (cc in names(template)) data.table::set(out, j = cc, value = template[[cc]])
+    for (cc in indepCols) data.table::set(out, j = cc, value = numeric())
     if (format == "wide") out <- .toWide(out, names(mainRes), subsetNames)
-    out[]
+    out
 }
