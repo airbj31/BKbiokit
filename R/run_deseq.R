@@ -25,7 +25,19 @@
   }
 
   if (is.factor(grp)) {
-    return(list(grp = droplevels(grp),
+    grp <- droplevels(grp)
+    lv  <- levels(grp)
+    looks_ref <- lv[grepl(.ref_pattern, lv, ignore.case = TRUE)]
+    if (length(looks_ref) == 1 && looks_ref != lv[1]) {
+      warning(condition, " is a factor with reference '", lv[1], "', but '",
+              looks_ref, "' looks like the control group.\n",
+              "  Factor levels are alphabetical unless set on purpose. If '",
+              looks_ref, "' should be the reference:\n",
+              "  meta$", condition, " <- relevel(meta$", condition,
+              ", ref = \"", looks_ref, "\")",
+              call. = FALSE)
+    }
+    return(list(grp = grp,
                 how = "factor level order (first level is the reference)"))
   }
 
@@ -65,9 +77,9 @@
 #'
 #' @param cnt Raw count matrix (or data frame) with genes in rows and samples
 #'   in columns. Row names are gene IDs and column names are sample IDs.
-#' @param meta Data frame or tibble of sample information.
-#' @param sample_col Name of the column in `meta` holding sample IDs that
-#'   match `colnames(cnt)`.
+#' @param meta Data frame of sample information with sample IDs as row names
+#'   (matching `colnames(cnt)`, in any order). A tibble has no row names, so
+#'   convert it first, e.g. `tibble::column_to_rownames(meta, "sample_id")`.
 #' @param condition Name of the column in `meta` to compare. Must have exactly
 #'   two groups.
 #' @param covariates Optional character vector of columns in `meta` to adjust
@@ -80,40 +92,83 @@
 #' @return A list with:
 #' * `dds`: the fitted `DESeqDataSet`.
 #' * `norm_cnt`: matrix of normalized counts.
+#' * `size_factors`: named vector of DESeq2 size factors (one per sample).
+#'   `norm_cnt` equals raw counts divided by these.
 #' * `deseq`: tibble of DESeq2 results (case vs control).
 #' * `comparison`: list describing the comparison (`condition`, `case`,
-#'   `control`, `method`, `n`, `design`).
+#'   `control`, `method`, `n`, `design`, `genes`, `cnt_thres`, `id`).
+#'
+#' The list has class `run_deseq_result`. Printing it shows a short summary
+#' with the top DE genes; use `$` to get the full tables, [summary()] for DE
+#' counts at several cutoffs, and `as.data.frame()` / `tibble::as_tibble()`
+#' for the result table.
 #'
 #' @examples
 #' \dontrun{
-#' res <- cnt_mat |>
-#'   run_deseq(meta, sample_col = "sample_id", condition = "group")
+#' meta <- tibble::column_to_rownames(meta_tbl, "sample_id")
+#'
+#' res <- cnt_mat |> run_deseq(meta, condition = "group")
 #'
 #' # Set the reference yourself with a factor
 #' meta$group <- factor(meta$group, levels = c("WT", "KO"))
-#' res <- run_deseq(cnt_mat, meta, "sample_id", "group", covariates = "batch")
+#' res <- run_deseq(cnt_mat, meta, "group", covariates = "batch")
 #' }
 #'
 #' @export
-run_deseq <- function(cnt, meta, sample_col, condition,
+run_deseq <- function(cnt, meta, condition,
                       covariates = NULL, id = "gene_id",
                       cnt_thres = 10, verbose = TRUE) {
 
   ## ---- Basic checks ----
-  missing <- setdiff(c(sample_col, condition, covariates), names(meta))
-  if (length(missing) > 0) {
-    stop("Column(s) not found in meta: ", paste(missing, collapse = ", "), call. = FALSE)
+  if (!is.character(condition) || length(condition) != 1 || is.na(condition) || condition == "") {
+    stop("condition must be a single column name, e.g. \"group\".", call. = FALSE)
+  }
+  if (!is.null(covariates) &&
+      (!is.character(covariates) || anyNA(covariates) || any(covariates == ""))) {
+    stop("covariates must be NULL or column names, e.g. c(\"batch\"). ",
+         "Use NULL (not \"\") when there are no covariates.", call. = FALSE)
   }
 
-  ## ---- Align meta to cnt sample order ----
-  meta <- as.data.frame(meta)
-  rownames(meta) <- meta[[sample_col]]
+  cols_hint <- paste0("  Columns in meta: ", paste(names(meta), collapse = ", "), "\n",
+                      "  (Sample names belong in rownames(meta), not in these arguments.)")
+  if (!condition %in% names(meta)) {
+    stop("condition = \"", condition, "\" is not a column of meta.\n", cols_hint,
+         call. = FALSE)
+  }
+  bad_cov <- setdiff(covariates, names(meta))
+  if (length(bad_cov) > 0) {
+    stop("covariates not found as columns of meta: ",
+         paste0("\"", bad_cov, "\"", collapse = ", "), "\n", cols_hint, call. = FALSE)
+  }
+
+  ## ---- Align meta to cnt sample order (by row names) ----
+  if (is.null(colnames(cnt))) {
+    stop("cnt must have sample IDs as column names.", call. = FALSE)
+  }
 
   not_in_meta <- setdiff(colnames(cnt), rownames(meta))
   if (length(not_in_meta) > 0) {
-    stop("Sample(s) in cnt not found in meta: ", paste(not_in_meta, collapse = ", "), call. = FALSE)
+    stop("Sample(s) in cnt not found in rownames(meta): ",
+         paste(not_in_meta, collapse = ", "), "\n",
+         "  meta must have sample IDs as row names. If they are in a column, use e.g.:\n",
+         "  meta <- tibble::column_to_rownames(meta, \"sample_id\")",
+         call. = FALSE)
   }
+  meta <- as.data.frame(meta)
+
+  # Report anything that differs before aligning
+  only_meta <- setdiff(rownames(meta), colnames(cnt))
+  if (verbose && length(only_meta) > 0) {
+    message("Note: ", length(only_meta), " sample(s) in meta but not in cnt were dropped: ",
+            paste(only_meta, collapse = ", "))
+  }
+  kept <- rownames(meta)[rownames(meta) %in% colnames(cnt)]
+  if (verbose && !identical(kept, colnames(cnt))) {
+    message("Note: meta rows were reordered to match colnames(cnt).")
+  }
+
   meta <- meta[colnames(cnt), , drop = FALSE]
+  stopifnot(identical(rownames(meta), colnames(cnt)))
 
   ## ---- Set the comparison groups ----
   picked <- .pick_reference(meta[[condition]], condition)
@@ -150,7 +205,11 @@ run_deseq <- function(cnt, meta, sample_col, condition,
     colData   = meta,
     design    = design
   )
+  n_input <- nrow(dds)
   dds <- dds[rowSums(DESeq2::counts(dds)) >= cnt_thres, ]
+  comparison$genes <- c(input = n_input, tested = nrow(dds))
+  comparison$cnt_thres <- cnt_thres
+  comparison$id <- id
   dds <- DESeq2::DESeq(dds, quiet = !verbose)
 
   res <- DESeq2::results(dds, contrast = c(condition, comparison$case, comparison$control)) |>
@@ -158,10 +217,13 @@ run_deseq <- function(cnt, meta, sample_col, condition,
     tibble::rownames_to_column(var = id) |>
     tibble::as_tibble()
 
-  list(
+  out <- list(
     dds        = dds,
-    norm_cnt   = DESeq2::counts(dds, normalized = TRUE),
-    deseq      = res,
+    norm_cnt     = DESeq2::counts(dds, normalized = TRUE),
+    size_factors = DESeq2::sizeFactors(dds),
+    deseq        = res,
     comparison = comparison
   )
+  class(out) <- c("run_deseq_result", "list")
+  out
 }
